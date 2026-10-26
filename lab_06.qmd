@@ -39,12 +39,26 @@ library(tidyverse)
 met <- read_csv("data/MET Office Weather Data.csv")
 met <- met |>
     mutate(date = make_date(year, month, 1))
+met
 ```
 
 - [ ] Produce a line plot showing how the maximum temperature in July recorded in the station in Southampton has changed over time. Add nice labels to your plot.
 - [ ] There appears to be a break in the plotted line. Work out where it is by using `coord_cartesian` to zoom in on the $x$ axis, and then check the dataset to identify the root cause. (Hint: look at the `xlim` argument of `coord_cartesian`. The $x$ axis shows dates, so the limits need to be dates too.)
 
 ::: {.solution}
+
+```{r}
+ggplot(met, aes(x =year, y=tmax, colour = month)) +
+  geom_line() +
+  facet_wrap(~month) +
+  labs(
+    title = "Changes in the maximum temperature in July",
+    x = "Date",
+    y = "Mean daily maximum temperature (°C)",
+
+  )
+```
+
 
 :::
 
@@ -55,6 +69,14 @@ Next we look at every month of the year, not just July, at four stations.
 - [ ] What does the line tell you about the trend of historical maximum temperatures?
 
 ::: {.solution}
+```{r}
+met |>
+  filter(station %in% c("southampton", "oxford", "sheffield", "paisley")) |>
+  ggplot(aes(x = date, y = tmax, colour = station)) +
+  geom_point(alpha=0.5) +
+  facet_wrap(~month) +
+  geom_smooth()
+```
 
 :::
 
@@ -66,7 +88,16 @@ Averaging over each year removes the seasonal cycle, since every (complete) year
 - [ ] Redraw the plot using only years with a complete set of 12 months. Roughly how much have annual mean maximum temperatures risen at these stations?
 
 ::: {.solution}
-
+```{r}
+met |>
+  filter(station %in% c("southampton", "oxford", "sheffield", "paisley")) |>
+  group_by(year,station) |>
+  summarise(mean=mean(tmax)) |>
+  ggplot(aes(x=year, y=mean, colour=station)) +
+  geom_line() +
+  geom_smooth()
+  
+```
 :::
 
 ### Task 2: Rainfall
@@ -74,6 +105,20 @@ Averaging over each year removes the seasonal cycle, since every (complete) year
 - [ ] Produce a bar chart showing how many monthly records there are for each station, using `geom_bar()`. Then produce the same chart using `count()` and `geom_col()`. (Hint: to make the station names readable, add `theme(axis.text.x = element_text(angle = 45, hjust = 1))` to your plot.)
 
 ::: {.solution}
+```{r}
+met |>
+  ggplot(aes(x=station)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+met |>
+  group_by(station)|>
+  summarise(total=n()) |>
+  ggplot(aes(x=station, y=total)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
 :::
 
@@ -81,6 +126,15 @@ Averaging over each year removes the seasonal cycle, since every (complete) year
 - [ ] Now make a *deliberately misleading* version of this plot, which suggests that Cwmystwyth gets several times as much rain as Stornoway. Which of the principles in the Week 6 notes does your plot break? How could a reader spot the trick?
 
 ::: {.solution}
+```{r}
+met |>
+  group_by(station) |>
+  summarise(avg_rainfall=mean(rain)) |>
+  arrange(desc(avg_rainfall)) |>
+  head(5) |>
+  ggplot(aes(x=station, y=avg_rainfall)) +
+  geom_col()
+```
 
 :::
 
@@ -89,13 +143,23 @@ Bar charts of averages hide how much the rainfall varies from month to month, so
 - [ ] Look up how to produce a box plot with `ggplot`, and produce a box plot of rainfall at each station. Are there any outliers at the low end? Why not?
 
 ::: {.solution}
-
+```{r}
+met |>
+  ggplot(aes(x=station, y=rain)) +
+  geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 :::
 
 - [ ] Plot a histogram of monthly rainfall across all stations. Experiment with the `bins` argument. How would you describe the shape of the distribution?
 - [ ] Redraw the histogram with a logarithmic $x$ axis (see the Week 6 notes). What happens to the shape? Read the warning messages carefully, and compare the number of rows removed with the previous histogram. Which months have been dropped, and why?
 
 ::: {.solution}
+```{r}
+met |>
+  ggplot(aes(x=rain)) + 
+  geom_histogram(bins=50)
+```
 
 :::
 
